@@ -159,6 +159,7 @@
             btnCopyFromLeft.TabIndex = 2;
             btnCopyFromLeft.Text = ">>>";
             btnCopyFromLeft.UseVisualStyleBackColor = true;
+            btnCopyFromLeft.Click += btnCopyFromLeft_Click;
             // 
             // lblAppName
             // 
@@ -246,6 +247,7 @@
             btnCopyFromRight.TabIndex = 3;
             btnCopyFromRight.Text = "<<<";
             btnCopyFromRight.UseVisualStyleBackColor = true;
+            btnCopyFromRight.Click += btnCopyFromRight_Click;
             // 
             // columnHeader1
             // 

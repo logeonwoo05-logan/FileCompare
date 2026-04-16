@@ -6,6 +6,12 @@ namespace FileCompare
         {
             InitializeComponent();
             InitializeListViewDrawEvents();
+
+            // 디자이너 속성 덮어쓰기 방지를 위해 명시적으로 이벤트 재할당
+            btnCopyFromLeft.Click -= btnCopyFromLeft_Click;
+            btnCopyFromLeft.Click += btnCopyFromLeft_Click;
+            btnCopyFromRight.Click -= btnCopyFromRight_Click;
+            btnCopyFromRight.Click += btnCopyFromRight_Click;
         }
 
         private void InitializeListViewDrawEvents()
@@ -85,6 +91,93 @@ namespace FileCompare
                     txtRightDir.Text = dlg.SelectedPath;
                     CompareAndPopulate();
                 }
+            }
+        }
+
+        private void btnCopyFromLeft_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtLeftDir.Text) || string.IsNullOrWhiteSpace(txtRightDir.Text)) return;
+            if (!Directory.Exists(txtLeftDir.Text) || !Directory.Exists(txtRightDir.Text)) return;
+
+            var leftFiles = new DirectoryInfo(txtLeftDir.Text).GetFiles().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
+
+            bool copied = false;
+            foreach (ListViewItem item in lvwLeftDir.SelectedItems)
+            {
+                var name = item.Text;
+                if (!leftFiles.TryGetValue(name, out var src))
+                    continue; // 파일 정보 없으면 건너뜀
+
+                var destPath = Path.Combine(txtRightDir.Text, src.Name);
+                if (CopyFileWithConfirmation(src.FullName, destPath))
+                {
+                    copied = true;
+                }
+            }
+
+            if (copied)
+                CompareAndPopulate();
+        }
+
+        private void btnCopyFromRight_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtLeftDir.Text) || string.IsNullOrWhiteSpace(txtRightDir.Text)) return;
+            if (!Directory.Exists(txtLeftDir.Text) || !Directory.Exists(txtRightDir.Text)) return;
+
+            var rightFiles = new DirectoryInfo(txtRightDir.Text).GetFiles().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
+
+            bool copied = false;
+            foreach (ListViewItem item in lvwRightDir.SelectedItems)
+            {
+                var name = item.Text;
+                if (!rightFiles.TryGetValue(name, out var src))
+                    continue;
+
+                var destPath = Path.Combine(txtLeftDir.Text, src.Name);
+                if (CopyFileWithConfirmation(src.FullName, destPath))
+                {
+                    copied = true;
+                }
+            }
+
+            if (copied)
+                CompareAndPopulate();
+        }
+
+        private bool CopyFileWithConfirmation(string srcPath, string destPath)
+        {
+            var srcFile = new FileInfo(srcPath);
+
+            if (File.Exists(destPath))
+            {
+                var destFile = new FileInfo(destPath);
+
+                // 원본이 과거 파일이고 대상이 더 신규 파일인 경우에만 확인 메시지 창 표시
+                // 과거 파일(오래된 것)을 현재 최신 파일(새로운 것)에 덮어쓸 때만 물어봄
+                if (srcFile.LastWriteTime < destFile.LastWriteTime)
+                {
+                    string msg = $"대상에 동일한 이름의 파일이 이미 있습니다.\r\n" +
+                                 $"대상 파일이 더 신규 파일입니다. 덮어쓰시겠습니까?\r\n\r\n" +
+                                 $"원본: {srcFile.FullName}\r\n수정일: {srcFile.LastWriteTime:yyyy-MM-dd HH:mm:ss}\r\n\r\n" +
+                                 $"대상: {destFile.FullName}\r\n수정일: {destFile.LastWriteTime:yyyy-MM-dd HH:mm:ss}";
+
+                    var result = MessageBox.Show(msg, "덮어쓰기 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    if (result == DialogResult.No)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            try
+            {
+                File.Copy(srcPath, destPath, true);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"파일 복사 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
         }
 

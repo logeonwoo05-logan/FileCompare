@@ -99,7 +99,7 @@ namespace FileCompare
             if (string.IsNullOrWhiteSpace(txtLeftDir.Text) || string.IsNullOrWhiteSpace(txtRightDir.Text)) return;
             if (!Directory.Exists(txtLeftDir.Text) || !Directory.Exists(txtRightDir.Text)) return;
 
-            var leftFiles = new DirectoryInfo(txtLeftDir.Text).GetFiles().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
+            var leftFiles = new DirectoryInfo(txtLeftDir.Text).GetFileSystemInfos().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
 
             bool copied = false;
             foreach (ListViewItem item in lvwLeftDir.SelectedItems)
@@ -109,7 +109,7 @@ namespace FileCompare
                     continue; // 파일 정보 없으면 건너뜀
 
                 var destPath = Path.Combine(txtRightDir.Text, src.Name);
-                if (CopyFileWithConfirmation(src.FullName, destPath))
+                if (CopyItemWithConfirmation(src, destPath))
                 {
                     copied = true;
                 }
@@ -124,7 +124,7 @@ namespace FileCompare
             if (string.IsNullOrWhiteSpace(txtLeftDir.Text) || string.IsNullOrWhiteSpace(txtRightDir.Text)) return;
             if (!Directory.Exists(txtLeftDir.Text) || !Directory.Exists(txtRightDir.Text)) return;
 
-            var rightFiles = new DirectoryInfo(txtRightDir.Text).GetFiles().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
+            var rightFiles = new DirectoryInfo(txtRightDir.Text).GetFileSystemInfos().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
 
             bool copied = false;
             foreach (ListViewItem item in lvwRightDir.SelectedItems)
@@ -134,7 +134,7 @@ namespace FileCompare
                     continue;
 
                 var destPath = Path.Combine(txtLeftDir.Text, src.Name);
-                if (CopyFileWithConfirmation(src.FullName, destPath))
+                if (CopyItemWithConfirmation(src, destPath))
                 {
                     copied = true;
                 }
@@ -142,6 +142,40 @@ namespace FileCompare
 
             if (copied)
                 CompareAndPopulate();
+        }
+
+        private bool CopyItemWithConfirmation(FileSystemInfo srcFsInfo, string destPath)
+        {
+            try
+            {
+                if (srcFsInfo is DirectoryInfo srcDir)
+                {
+                    if (!Directory.Exists(destPath))
+                    {
+                        Directory.CreateDirectory(destPath);
+                    }
+
+                    bool anyCopied = true;
+                    foreach (var item in srcDir.GetFileSystemInfos())
+                    {
+                        if (!CopyItemWithConfirmation(item, Path.Combine(destPath, item.Name)))
+                        {
+                            anyCopied = false;
+                        }
+                    }
+                    return anyCopied;
+                }
+                else if (srcFsInfo is FileInfo srcFile)
+                {
+                    return CopyFileWithConfirmation(srcFile.FullName, destPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"(하위항목) 복사 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            return false;
         }
 
         private bool CopyFileWithConfirmation(string srcPath, string destPath)
@@ -191,14 +225,14 @@ namespace FileCompare
             bool leftExists = !string.IsNullOrWhiteSpace(txtLeftDir.Text) && Directory.Exists(txtLeftDir.Text);
             bool rightExists = !string.IsNullOrWhiteSpace(txtRightDir.Text) && Directory.Exists(txtRightDir.Text);
 
-            var leftFiles = leftExists ? new DirectoryInfo(txtLeftDir.Text).GetFiles().OrderBy(f => f.Name).ToArray() : new FileInfo[0];
-            var rightFiles = rightExists ? new DirectoryInfo(txtRightDir.Text).GetFiles().OrderBy(f => f.Name).ToArray() : new FileInfo[0];
+            var leftFiles = leftExists ? new DirectoryInfo(txtLeftDir.Text).GetFileSystemInfos().OrderBy(f => f is DirectoryInfo ? 0 : 1).ThenBy(f => f.Name).ToArray() : new FileSystemInfo[0];
+            var rightFiles = rightExists ? new DirectoryInfo(txtRightDir.Text).GetFileSystemInfos().OrderBy(f => f is DirectoryInfo ? 0 : 1).ThenBy(f => f.Name).ToArray() : new FileSystemInfo[0];
 
             PopulateList(lvwLeftDir, leftFiles, rightFiles);
             PopulateList(lvwRightDir, rightFiles, leftFiles);
         }
 
-        private void PopulateList(ListView lv, FileInfo[] sourceFiles, FileInfo[] targetFiles)
+        private void PopulateList(ListView lv, FileSystemInfo[] sourceFiles, FileSystemInfo[] targetFiles)
         {
             lv.BeginUpdate();
             lv.Items.Clear();
@@ -208,10 +242,19 @@ namespace FileCompare
                 foreach (var lf in sourceFiles)
                 {
                     var litem = new ListViewItem(lf.Name);
-                    litem.SubItems.Add(FormatSizeInKb(lf.Length));
+
+                    if (lf is DirectoryInfo)
+                    {
+                        litem.SubItems.Add("<DIR>");
+                    }
+                    else
+                    {
+                        litem.SubItems.Add(FormatSizeInKb(((FileInfo)lf).Length));
+                    }
+
                     litem.SubItems.Add(lf.LastWriteTime.ToString("g"));
 
-                    var rf = targetFiles.FirstOrDefault(t => t.Name.Equals(lf.Name, StringComparison.OrdinalIgnoreCase));
+                    var rf = targetFiles.FirstOrDefault(t => t.Name.Equals(lf.Name, StringComparison.OrdinalIgnoreCase) && t.GetType() == lf.GetType());
 
                     // 상태 결정 및 색상 적용
                     if (rf != null)

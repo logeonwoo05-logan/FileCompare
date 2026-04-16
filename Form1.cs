@@ -150,7 +150,24 @@ namespace FileCompare
             {
                 if (srcFsInfo is DirectoryInfo srcDir)
                 {
-                    if (!Directory.Exists(destPath))
+                    if (Directory.Exists(destPath))
+                    {
+                        var destDir = new DirectoryInfo(destPath);
+                        if (srcDir.LastWriteTime < destDir.LastWriteTime)
+                        {
+                            string msg = $"대상에 동일한 이름의 폴더가 이미 있습니다.\r\n" +
+                                         $"대상 폴더가 더 신규 폴더입니다. 덮어쓰시겠습니까?\r\n\r\n" +
+                                         $"원본: {srcDir.FullName}\r\n수정일: {srcDir.LastWriteTime:yyyy-MM-dd HH:mm:ss}\r\n\r\n" +
+                                         $"대상: {destDir.FullName}\r\n수정일: {destDir.LastWriteTime:yyyy-MM-dd HH:mm:ss}";
+
+                            var result = MessageBox.Show(msg, "덮어쓰기 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                            if (result == DialogResult.No)
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                    else
                     {
                         Directory.CreateDirectory(destPath);
                     }
@@ -163,6 +180,19 @@ namespace FileCompare
                             anyCopied = false;
                         }
                     }
+
+                    // 폴더 내부 복사가 끝난 후 대상 폴더의 시간 정보를 원본과 동일하게 맞춤
+                    try
+                    {
+                        Directory.SetCreationTime(destPath, srcDir.CreationTime);
+                        Directory.SetLastWriteTime(destPath, srcDir.LastWriteTime);
+                        Directory.SetLastAccessTime(destPath, srcDir.LastAccessTime);
+                    }
+                    catch
+                    {
+                        // 시간 설정 중 권한 문제 등이 있을 수 있으므로 오류를 무시합니다.
+                    }
+
                     return anyCopied;
                 }
                 else if (srcFsInfo is FileInfo srcFile)

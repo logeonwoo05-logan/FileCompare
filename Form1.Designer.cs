@@ -44,6 +44,12 @@
             txtRightDir = new TextBox();
             panel4 = new Panel();
             btnCopyFromRight = new Button();
+            columnHeader1 = new ColumnHeader();
+            columnHeader2 = new ColumnHeader();
+            columnHeader3 = new ColumnHeader();
+            columnHeader4 = new ColumnHeader();
+            columnHeader5 = new ColumnHeader();
+            columnHeader6 = new ColumnHeader();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -89,12 +95,16 @@
             // 
             // lvwLeftDir
             // 
+            lvwLeftDir.Columns.AddRange(new ColumnHeader[] { columnHeader1, columnHeader2, columnHeader3 });
             lvwLeftDir.Dock = DockStyle.Fill;
+            lvwLeftDir.FullRowSelect = true;
+            lvwLeftDir.GridLines = true;
             lvwLeftDir.Location = new Point(0, 0);
             lvwLeftDir.Name = "lvwLeftDir";
             lvwLeftDir.Size = new Size(1167, 910);
             lvwLeftDir.TabIndex = 0;
             lvwLeftDir.UseCompatibleStateImageBehavior = false;
+            lvwLeftDir.View = View.Details;
             // 
             // panel2
             // 
@@ -154,11 +164,11 @@
             // 
             lblAppName.Anchor = AnchorStyles.Left;
             lblAppName.AutoSize = true;
-            lblAppName.Font = new Font("맑은 고딕", 21F);
+            lblAppName.Font = new Font("맑은 고딕", 30F);
             lblAppName.ForeColor = Color.Blue;
             lblAppName.Location = new Point(31, 22);
             lblAppName.Name = "lblAppName";
-            lblAppName.Size = new Size(370, 74);
+            lblAppName.Size = new Size(526, 106);
             lblAppName.TabIndex = 1;
             lblAppName.Text = "File Compare";
             // 
@@ -173,12 +183,16 @@
             // 
             // lvwRightDir
             // 
+            lvwRightDir.Columns.AddRange(new ColumnHeader[] { columnHeader4, columnHeader5, columnHeader6 });
             lvwRightDir.Dock = DockStyle.Fill;
+            lvwRightDir.FullRowSelect = true;
+            lvwRightDir.GridLines = true;
             lvwRightDir.Location = new Point(0, 0);
             lvwRightDir.Name = "lvwRightDir";
             lvwRightDir.Size = new Size(1165, 910);
             lvwRightDir.TabIndex = 0;
             lvwRightDir.UseCompatibleStateImageBehavior = false;
+            lvwRightDir.View = View.Details;
             // 
             // panel5
             // 
@@ -233,6 +247,36 @@
             btnCopyFromRight.Text = "<<<";
             btnCopyFromRight.UseVisualStyleBackColor = true;
             // 
+            // columnHeader1
+            // 
+            columnHeader1.Text = "이름";
+            columnHeader1.Width = 600;
+            // 
+            // columnHeader2
+            // 
+            columnHeader2.Text = "크기";
+            columnHeader2.Width = 200;
+            // 
+            // columnHeader3
+            // 
+            columnHeader3.Text = "수정일";
+            columnHeader3.Width = 320;
+            // 
+            // columnHeader4
+            // 
+            columnHeader4.Text = "이름";
+            columnHeader4.Width = 600;
+            // 
+            // columnHeader5
+            // 
+            columnHeader5.Text = "크기";
+            columnHeader5.Width = 200;
+            // 
+            // columnHeader6
+            // 
+            columnHeader6.Text = "수정일";
+            columnHeader6.Width = 320;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(14F, 32F);
@@ -275,5 +319,11 @@
         private TextBox txtRightDir;
         private ListView lvwLeftDir;
         private ListView lvwRightDir;
+        private ColumnHeader columnHeader1;
+        private ColumnHeader columnHeader2;
+        private ColumnHeader columnHeader3;
+        private ColumnHeader columnHeader4;
+        private ColumnHeader columnHeader5;
+        private ColumnHeader columnHeader6;
     }
 }
